@@ -13,6 +13,7 @@ extern crate serde_json;
 extern crate vec_map;
 
 use clap::{Arg, App};
+use regex;
 
 error_chain! {
     foreign_links {
@@ -38,6 +39,15 @@ fn run() -> Result<()> {
         .level(log::LevelFilter::Debug)
         .chain(std::io::stdout())
         .apply().expect("Error: Fern unapble to create logger");
+    
+    // https://regex101.com/r/tGp2wv/1/
+    let regex_fanfiction_net = match regex::Regex::new(r"(http[s]?:\/\/)?(www|m)?[.]?fanfiction.net\/s\/(\d{7})(\/)?(\d{1,4})?(\/)?(.*)?") {
+        Ok(r) => r,
+        Err(e) => {
+            error!("Could not compile Regex for Fanfiction.Net: {}", e);
+            return;
+        }
+    };
 
     let app = App::new("FFScraper")
         .version(crate_version!())
@@ -55,10 +65,14 @@ fn run() -> Result<()> {
              .long("disable")
              .help("Disables Reqwest useragent"))
         .get_matches();
-
+    
     let urls = app.values_of("url").map(|vals| vals.collect::<Vec<_>>());
 
-    info!("{:?}", urls);
+    info!("URLs: {:?}", urls);
+    
+    for url in urls {
+        info!("URL: {:?}", url);
+    }
 
     Ok(())
 }
