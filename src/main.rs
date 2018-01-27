@@ -12,17 +12,33 @@ extern crate serde;
 extern crate serde_json;
 extern crate vec_map;
 
-use clap::{Arg, App};
-use regex;
-
 error_chain! {
     foreign_links {
+        RegError(regex::Error);
         ReqError(reqwest::Error);
         IoError(std::io::Error);
     }
 }
 
 mod sites;
+
+fn download(matches: clap::ArgMatches, url: &str, site: &sites::Sites) -> Result<()> {
+
+    let client = reqwest::Client::new();
+
+    let res = match client.get(url) {
+        Ok(r) => r,
+        Err(e) => {
+            return Err(format!("Could not Reqwest site for: {}", e).into());
+        }
+    };
+
+    if !matches.is_present("disable") {
+        res.header(reqwest::header::UserAgent::new(format!("FFScrape/{:?} reqwest/{:?}", crate_version!(), "0.8.4")));
+    }
+
+    Ok(())
+}
 
 fn run() -> Result<()> {
 
@@ -38,43 +54,46 @@ fn run() -> Result<()> {
         })
         .level(log::LevelFilter::Debug)
         .chain(std::io::stdout())
-        .apply().expect("Error: Fern unapble to create logger");
-    
+        .apply().expect("Error: Fern unable to create logger");
+
     // https://regex101.com/r/tGp2wv/1/
-    let regex_fanfiction_net = match regex::Regex::new(r"(http[s]?:\/\/)?(www|m)?[.]?fanfiction.net\/s\/(\d{7})(\/)?(\d{1,4})?(\/)?(.*)?") {
+    let regex_fanfiction_net = match regex::Regex::new(r"(http[s]?://)?(www|m)?[.]?fanfiction.net/s/(\d{7})(/)?(\d{1,4})?(/)?(.*)?") {
         Ok(r) => r,
         Err(e) => {
-            error!("Could not compile Regex for Fanfiction.Net: {}", e);
-            return;
+            return Err(format!("Could not compile Regex for Fanfiction.Net: {}", e).into());
         }
     };
 
-    let app = App::new("FFScraper")
+    let app = clap::App::new("FFScraper")
         .version(crate_version!())
         .author(crate_authors!())
         .about("Downloads stories from various sites")
-        .arg(Arg::with_name("url")
+        .arg(clap::Arg::with_name("url")
              .short("u")
              .long("url")
              .help("Story url(s)")
              .takes_value(true)
              .value_name("URL")
              .multiple(true))
-        .arg(Arg::with_name("disable")
+        .arg(clap::Arg::with_name("disable")
              .short("d")
              .long("disable")
              .help("Disables Reqwest useragent"))
         .get_matches();
-    
+
     let urls = app.values_of("url").map(|vals| vals.collect::<Vec<_>>());
 
-    info!("URLs: {:?}", urls);
-    
-    for url in urls {
+    info!("URLs: {:?}", &urls.clone().unwrap_or_else(Vec::new));
+
+    for url in &urls.clone().unwrap_or_else(Vec::new) {
         info!("URL: {:?}", url);
+
+        if regex_fanfiction_net.is_match(&url) {
+            info!("URL: {:?}, matches Fanfiction.Net Regex", url);
+        }
     }
 
-    Ok(())
+    return Ok(());
 }
 
 quick_main!(run);
