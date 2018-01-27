@@ -26,18 +26,13 @@ fn download(matches: clap::ArgMatches, url: &str, site: &sites::Sites) -> Result
 
     let client = reqwest::Client::new();
 
-    let res = match client.get(url) {
-        Ok(r) => r,
-        Err(e) => {
-            return Err(format!("Could not Reqwest site for: {}", e).into());
-        }
-    };
+    let mut res = client.get(url);
 
     if !matches.is_present("disable") {
         res.header(reqwest::header::UserAgent::new(format!("FFScrape/{:?} reqwest/{:?}", crate_version!(), "0.8.4")));
     }
 
-    Ok(())
+    return Ok(())
 }
 
 fn run() -> Result<()> {
@@ -60,11 +55,11 @@ fn run() -> Result<()> {
     let regex_fanfiction_net = match regex::Regex::new(r"(http[s]?://)?(www|m)?[.]?fanfiction.net/s/(\d{7})(/)?(\d{1,4})?(/)?(.*)?") {
         Ok(r) => r,
         Err(e) => {
-            return Err(format!("Could not compile Regex for Fanfiction.Net: {}", e).into());
+            return Err(format!("Could not compile Regex for FanFiction.Net: {}", e).into());
         }
     };
 
-    let app = clap::App::new("FFScraper")
+    let app = clap::App::new("FFScrape")
         .version(crate_version!())
         .author(crate_authors!())
         .about("Downloads stories from various sites")
@@ -90,6 +85,8 @@ fn run() -> Result<()> {
 
         if regex_fanfiction_net.is_match(&url) {
             info!("URL: {:?}, matches Fanfiction.Net Regex", url);
+
+            download(app, url, sites::Sites::FanFictionNet);
         }
     }
 
