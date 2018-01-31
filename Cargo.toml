@@ -6,12 +6,12 @@ authors = ["Txuritan <txurtian@yahoo.com>"]
 [dependencies]
 chrono = { version = "0.4", features = ["serde"] }
 clap = "2.29"
-error-chain = "0.10"
 fern = "0.5"
 log = "0.4"
+os_info = "0.7"
 regex = "0.2"
 reqwest = "0.8"
-scraper = "0.4"
+scraper = { git = "https://github.com/yoursvivek/scraper", branch = "stack_upgrade" }
 select = "0.4"
 serde = "1.0"
 serde_derive = "1.0"
