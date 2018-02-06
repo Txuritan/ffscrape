@@ -4,6 +4,7 @@ use std::string;
 
 use chrono;
 use reqwest;
+use regex;
 use scraper;
 use vec_map;
 
@@ -27,18 +28,19 @@ pub struct FanFiction {
 
 impl FanFiction {
     pub fn new() -> FanFiction {
-        return FanFiction {
+        FanFiction {
             ..Default::default()
-        };
+        }
     }
 
-    pub fn get(&self, url: &str, client: &reqwest::Client) -> FanFiction {
-        return (
-            self.get_title(&document),
-            self.get_author(&document),
-            self.get_fandoms(&document),
-            self.get_rating(&document),
-        );
+    pub fn get(&self, url: &str, client: &reqwest::Client, document: &scraper::Html) -> FanFiction {
+        FanFiction {
+            title: self.get_title(&document),
+            author: self.get_author(&document),
+            fandoms: self.get_fandoms(&document),
+            // self.get_rating(&document),
+            ..Default::default()
+        }
     }
 
     fn get_title(&self, document: &scraper::Html) -> string::String {
@@ -57,7 +59,7 @@ impl FanFiction {
             }
         }
 
-        return title;
+        title
     }
 
     fn get_author(&self, document: &scraper::Html) -> string::String {
@@ -69,7 +71,7 @@ impl FanFiction {
             author = element_author.inner_html();
         }
 
-        return author;
+        author
     }
 
     fn get_fandoms(&self, document: &scraper::Html) -> vec::Vec<string::String> {
@@ -86,13 +88,13 @@ impl FanFiction {
             }
         }
 
-        return fandoms;
+        fandoms
     }
 }
 
 impl default::Default for FanFiction {
     fn default() -> FanFiction {
-        return FanFiction {
+        FanFiction {
             title: string::String::from(""),
             author: string::String::from(""),
             fandoms: vec::Vec::new(),
@@ -106,6 +108,6 @@ impl default::Default for FanFiction {
             published: chrono::offset::Utc::now(),
             updated: chrono::offset::Utc::now(),
             chapters: vec_map::VecMap::new(),
-        };
+        }
     }
 }
